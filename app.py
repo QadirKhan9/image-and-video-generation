@@ -96,4 +96,10 @@ if __name__ == "__main__":
         )
 
     auth: Callable[[str, str], bool] | tuple[str, str] | list[tuple[str, str]] | None = (auth_username, auth_password) if auth_username else None # pyright: ignore[reportAssignmentType]
-    app.launch(theme=Soft(), show_error=True, auth=auth)
+    app.launch(
+        theme=Soft(),
+        show_error=True,
+        auth=auth,
+        server_name="0.0.0.0",
+        server_port=int(os.getenv("PORT", "7860")),
+    )
