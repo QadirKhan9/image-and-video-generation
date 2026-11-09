@@ -1,7 +1,6 @@
 import os
 import sys
 import asyncio
-from typing import Callable
 
 # Fix: Windows ProactorEventLoop throws WinError 10054 when a remote host
 # closes the connection. Switching to SelectorEventLoop avoids this noise.
@@ -10,7 +9,6 @@ if sys.platform == "win32":
 
 import gradio as gr
 from gradio.themes import Soft
-from dotenv import load_dotenv
 
 # Ensure project root is on PYTHONPATH for relative imports
 project_root = os.path.abspath(os.path.dirname(__file__))
@@ -21,7 +19,6 @@ if project_root not in sys.path:
 # pyrefly: ignore [missing-import]
 from utils.ai_studio_code import generate_image, MODELS
 from utils.video_studio_code import generate_video, VIDEO_MODELS
-load_dotenv()
 
 # ---------------------------------------------------------------------------
 # UI Layout – Premium Tabbed Interface
@@ -132,22 +129,9 @@ with gr.Blocks() as app:
 
 
 if __name__ == "__main__":
-    auth_username = os.getenv("GRADIO_USERNAME")
-    auth_password = os.getenv("GRADIO_PASSWORD")
-    is_huggingface_space = bool(os.getenv("SPACE_ID"))
-
-    if bool(auth_username) != bool(auth_password):
-        raise RuntimeError("Set both GRADIO_USERNAME and GRADIO_PASSWORD.")
-    if is_huggingface_space and not auth_username:
-        raise RuntimeError(
-            "Set GRADIO_USERNAME and GRADIO_PASSWORD in the Hugging Face Space secrets."
-        )
-
-    auth: Callable[[str, str], bool] | tuple[str, str] | list[tuple[str, str]] | None = (auth_username, auth_password) if auth_username else None # pyright: ignore[reportAssignmentType]
     app.launch(
         theme=Soft(),
         show_error=True,
-        auth=auth,
         server_name="0.0.0.0",
         server_port=int(os.getenv("PORT", "7860")),
     )
