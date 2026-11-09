@@ -46,12 +46,27 @@ with gr.Blocks() as app:
                     generate_btn = gr.Button("Generate Image", variant="primary")
                 with gr.Column(scale=2):
                     image_output = gr.Image(label="Generated Result", type="pil")
-            generate_btn.click(
-                fn=generate_image,
-                inputs=[prompt_input, model_dropdown],
-                outputs=image_output,
-                api_name="generate_image"
-            )
+
+            def _generate_image_with_controls(prompt, model):
+                yield (
+                    gr.skip(),
+                    gr.update(value="Generating Image...", interactive=False),
+                    gr.update(interactive=False),
+                )
+                try:
+                    image = generate_image(prompt, model)
+                except Exception:
+                    yield (
+                        gr.skip(),
+                        gr.update(value="Generate Image", interactive=True),
+                        gr.update(interactive=True),
+                    )
+                    raise
+                yield (
+                    image,
+                    gr.update(value="Generate Image", interactive=True),
+                    gr.update(interactive=True),
+                )
 
         # ---------------- Video Generation Tab ----------------
         with gr.TabItem("🎥 Video Generator"):
@@ -75,11 +90,44 @@ with gr.Blocks() as app:
                 with gr.Column(scale=2):
                     video_output = gr.Video(label="Generated Video Result")
 
+            def _generate_video_with_controls(prompt, image, model):
+                yield (
+                    gr.skip(),
+                    gr.update(interactive=False),
+                    gr.update(value="Generating Video...", interactive=False),
+                )
+                try:
+                    video = generate_video(prompt, image, model)
+                except Exception:
+                    yield (
+                        gr.skip(),
+                        gr.update(interactive=True),
+                        gr.update(value="Generate Video", interactive=True),
+                    )
+                    raise
+                yield (
+                    video,
+                    gr.update(interactive=True),
+                    gr.update(value="Generate Video", interactive=True),
+                )
+
             video_generate_btn.click(
-                fn=generate_video,
+                fn=_generate_video_with_controls,
                 inputs=[video_prompt, video_image_input, video_model_dropdown],
-                outputs=video_output,
-                api_name="generate_video"
+                outputs=[video_output, generate_btn, video_generate_btn],
+                api_name="generate_video",
+                trigger_mode="once",
+                concurrency_limit=1,
+                concurrency_id="generation",
+            )
+            generate_btn.click(
+                fn=_generate_image_with_controls,
+                inputs=[prompt_input, model_dropdown],
+                outputs=[image_output, generate_btn, video_generate_btn],
+                api_name="generate_image",
+                trigger_mode="once",
+                concurrency_limit=1,
+                concurrency_id="generation",
             )
 
 
